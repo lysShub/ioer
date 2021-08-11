@@ -1,3 +1,7 @@
+/*
+* 请用, 与原生map相比并没用明显优势; 参考maps_test结果
+ */
+
 // 专为net.Addr设计的map, 也可以使用原生map[int64]*ioer.Conn
 // 一个地址ip4:port总共48位, 可以使用int64存放
 
@@ -11,10 +15,6 @@ import (
 	"github.com/lysShub/ioer"
 )
 
-// 只支持IPv4
-// 由于暂时不考虑单连接多链路，所以Addr的端口是确定的
-// hash方法： ip[3]<<8+ip[4]
-
 var defaultIP net.IP
 
 func init() {
@@ -26,13 +26,13 @@ type b struct {
 	c   *ioer.Conn
 }
 
-type Amap struct {
+type Maps struct {
 	h    [65535][]b
 	lock sync.RWMutex
 }
 
 // Add 追加
-func (a *Amap) Add(addr *net.UDPAddr, c *ioer.Conn) {
+func (a *Maps) Add(addr *net.UDPAddr, c *ioer.Conn) {
 	if addr.IP == nil {
 		addr.IP = defaultIP
 	} else if len(addr.IP) < 16 {
@@ -56,7 +56,7 @@ func (a *Amap) Add(addr *net.UDPAddr, c *ioer.Conn) {
 }
 
 // Read 读取
-func (a *Amap) Read(addr *net.UDPAddr) (*ioer.Conn, bool) {
+func (a *Maps) Read(addr *net.UDPAddr) (*ioer.Conn, bool) {
 	if addr.IP == nil {
 		addr.IP = defaultIP
 	} else if len(addr.IP) < 16 {
@@ -78,7 +78,7 @@ func (a *Amap) Read(addr *net.UDPAddr) (*ioer.Conn, bool) {
 	}
 }
 
-func (a *Amap) Delete(addr *net.UDPAddr) {
+func (a *Maps) Delete(addr *net.UDPAddr) {
 	if addr.IP == nil {
 		addr.IP = defaultIP
 	} else if len(addr.IP) < 16 {

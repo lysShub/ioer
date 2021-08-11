@@ -1,8 +1,10 @@
-package test_test
+package router_test
 
 // 选择为数据路由的方式：存Map或存Slice（采用二分法查找）
 
 import "testing"
+
+var length int = 80 // 数据量
 
 func BenchmarkSlice(b *testing.B) {
 	for i := 0; i < b.N; i++ {
@@ -21,8 +23,6 @@ func BenchmarkMap(b *testing.B) {
 		}
 	}
 }
-
-var length int = 80
 
 var list []int = make([]int, length)
 

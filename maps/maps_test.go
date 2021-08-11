@@ -13,7 +13,7 @@ import (
 )
 
 func TestCoverAmap(t *testing.T) {
-	var m maps.Amap
+	var m maps.Maps
 
 	m.Add(&net.UDPAddr{IP: nil, Port: 19945}, nil)
 	if v, ok := m.Read(&net.UDPAddr{IP: nil, Port: 19945}); ok {
