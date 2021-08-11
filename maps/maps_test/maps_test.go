@@ -3,6 +3,7 @@ package maps_test
 import (
 	"bufio"
 	"crypto/rand"
+	"fmt"
 	"math/big"
 	"net"
 	"os"
@@ -12,78 +13,72 @@ import (
 )
 
 // 测试maps和map的速度
-// 数据来源 https://github.com/17mon/china_ip_list
+// IP数据来源 https://github.com/17mon/china_ip_list
 
-var maplength int = 250 // map(s)中所有的数据量
+var addrsLenght int = 250 // map(s)中所有的数据量, 测试函数每次循环读写数据
 
+// addrsLenght大小： 250
 // goos: windows
 // goarch: amd64
 // pkg: github.com/lysShub/ioer/maps/maps_test
 // cpu: Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz
-// BenchmarkMWrite-8    	   87490	     13801 ns/op	       0 B/op	       0 allocs/op
-// BenchmarkMSWrite-8   	   30934	     47277 ns/op	   22840 B/op	       0 allocs/op
-// BenchmarkMRead-8     	  134210	     10072 ns/op	       0 B/op	       0 allocs/op
-// BenchmarkMSRead-8    	  156195	      7770 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkMWrite-8    	16138857	        75.67 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkMSWrite-8   	 7686552	       160.1 ns/op	      85 B/op	       0 allocs/op
+// BenchmarkMRead-8     	20573872	        57.79 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkMSRead-8    	21988532	        54.32 ns/op	       0 B/op	       0 allocs/op
 // PASS
-// ok  	github.com/lysShub/ioer/maps/maps_test	6.791s
+// ok  	github.com/lysShub/ioer/maps/maps_test	6.037s
+
+// addrsLenght大小： 6014
+// goos: windows
+// goarch: amd64
+// pkg: github.com/lysShub/ioer/maps/maps_test
+// cpu: Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz
+// BenchmarkMWrite-8    	11081028	       108.1 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkMSWrite-8   	 6102097	       181.0 ns/op	      46 B/op	       0 allocs/op
+// BenchmarkMRead-8     	12080844	       107.6 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkMSRead-8    	 9198940	       134.9 ns/op	       0 B/op	       0 allocs/op
+// PASS
+// ok  	github.com/lysShub/ioer/maps/maps_test	6.214s
 
 func BenchmarkMWrite(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		mwrite()
+
+		m[ider(addrs[i%addrsLenght])] = i
 	}
 }
 
 func BenchmarkMSWrite(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		mswrite()
+
+		ms.Add(addrs[i%addrsLenght], nil)
 	}
 }
 
 func BenchmarkMRead(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		mread()
+
+		if _, ok := m[ider(addrs[i%addrsLenght])]; ok && false {
+			fmt.Println()
+		}
 	}
 }
 
 func BenchmarkMSRead(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		msrade()
+
+		if _, ok := ms.Read(addrs[i%addrsLenght]); ok && false {
+			fmt.Println()
+		}
 	}
 }
 
-// -----------------------------------------
+// ---------------------------------------------------- //
 
 var m map[int64]int = make(map[int64]int)
 var ms maps.Maps
 
-var addrs []*net.UDPAddr = make([]*net.UDPAddr, 0, maplength)
-
-func mwrite() {
-	for i := 0; i < maplength; i++ {
-		m[ider(addrs[i])] = i
-	}
-}
-func mswrite() {
-	for i := 0; i < maplength; i++ {
-		ms.Add(addrs[i], nil)
-	}
-}
-
-func mread() {
-	for i := 0; i < maplength; i++ {
-		if _, ok := m[ider(addrs[i])]; ok {
-
-		}
-	}
-}
-
-func msrade() {
-	for i := 0; i < maplength; i++ {
-		if _, ok := ms.Read(addrs[i]); ok {
-
-		}
-	}
-}
+var addrs []*net.UDPAddr = make([]*net.UDPAddr, 0, addrsLenght)
 
 func init() {
 
@@ -102,18 +97,23 @@ func init() {
 		return r.String()
 	}
 
-	for i := 0; i < maplength && sh.Scan(); i++ {
+	for i := 0; i < addrsLenght; i++ {
+		if !sh.Scan() {
+			addrsLenght = i - 1
+		}
 		if addr, err := net.ResolveUDPAddr("udp", sh.Text()+":"+randPort()); err != nil {
 			continue
 		} else {
 			addrs = append(addrs, addr)
 		}
 	}
+
+	fmt.Println("addrsLenght大小：", addrsLenght)
 }
 
 func ider(addr *net.UDPAddr) int64 {
 	if addr == nil {
-		return 0
+		panic("addr is nil")
 	} else {
 		addr.IP = addr.IP.To16()
 		if addr.IP == nil || len(addr.IP) < 16 {

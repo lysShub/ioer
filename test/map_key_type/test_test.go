@@ -11,11 +11,12 @@ import (
 
 // goos: windows
 // goarch: amd64
-// pkg: github.com/lysShub/ioer/test
+// pkg: github.com/lysShub/ioer/test/map_key_type
 // cpu: Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz
-// BenchmarkInt-8     	81468607	        13.96 ns/op	       0 B/op	       0 allocs/op
-// BenchmarkArray-8   	19302565	        62.35 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkInt-8     	72434024	        14.44 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkArray-8   	18692054	        68.13 ns/op	       0 B/op	       0 allocs/op
 // PASS
+// ok  	github.com/lysShub/ioer/test/map_key_type	2.504s
 
 var addr *net.UDPAddr = &net.UDPAddr{IP: net.ParseIP("23.56.156.245").To16(), Port: 19986}
 
@@ -25,6 +26,7 @@ var arrMap map[[5]int]struct{} = make(map[[5]int]struct{})
 func init() {
 	var intaddr = int64(addr.IP[12])<<+int64(addr.IP[13])<<32 + int64(addr.IP[14])<<24 + int64(addr.IP[15])<<16 + int64(addr.Port)
 	var arraddr = [5]int{int(addr.IP[12]), int(addr.IP[13]), int(addr.IP[14]), int(addr.IP[15]), addr.Port}
+
 	intMap[intaddr] = struct{}{}
 	arrMap[arraddr] = struct{}{}
 }

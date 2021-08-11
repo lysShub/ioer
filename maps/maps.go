@@ -1,5 +1,5 @@
 /*
-* 请用, 与原生map相比并没用明显优势; 参考maps_test结果
+* 弃用, 与原生map相比并没用明显优势; 参考maps_test结果
  */
 
 // 专为net.Addr设计的map, 也可以使用原生map[int64]*ioer.Conn
