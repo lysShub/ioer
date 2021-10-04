@@ -5,6 +5,7 @@ package ioer
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"runtime"
@@ -27,6 +28,12 @@ func (l *Listener) run() {
 		tmp   []byte = make([]byte, 65536)
 	)
 
+	defer func() {
+		if recover() != nil {
+			// l.Close() 会关闭l.lconn，会导致ReadFromUDP发生panic
+		}
+	}()
+
 	for !l.done {
 		if n, raddr, err = l.lconn.ReadFromUDP(tmp); !l.done && err != nil {
 			errlog(err)
@@ -34,32 +41,34 @@ func (l *Listener) run() {
 		} else if n > 0 {
 			id = ider(raddr)
 
-			// 新链接
-			if c, ok = l.conns[id]; !ok { // 查询l.conns[id]会导致一定的性能下降
-				var ch chan []byte = make(chan []byte, 16)
+			if c, ok = l.connList[id]; !ok { // 新增连接Conn 瓶颈
+				// 权鉴
 
+				// 新增连接
 				c = new(Conn)
-				c.io, c.lconn = ch, l.lconn
-				c.raddr = raddr
+				// c.buf= make(chan []byte)
+				c.r, c.w = io.Pipe()
+				c.raddr, c.Lconn = raddr, l.lconn
 				c.listenerid = ider(l.laddr)
-
 				select {
 				case l.rConn <- c:
 				default:
 				}
-				// if len(l.rConn) < cap(l.rConn) {
-				// 	l.rConn <- c
-				// }
-
 			}
 
 			// if len(c.io) < cap(c.io) {
 			// 	c.io <- l.tmp[:n]
 			// }
-			select {
-			case c.io <- tmp[:n]: // 写入数据
-			default:
-			}
+
+			c.ing = c.ing + 1
+
+			c.Write(tmp[:n])
+
+			// select {
+			// // case c.buf <- tmp[:n]: // 写入数据
+			// case :
+			// default:
+			// }
 
 		}
 	}
@@ -69,12 +78,12 @@ func ider(addr *net.UDPAddr) int64 {
 	if addr == nil {
 		return 0
 	} else {
-		addr.IP = addr.IP.To16()
-		if addr.IP == nil || len(addr.IP) < 16 {
-			return int64(addr.Port)
-		} else {
-			return int64(addr.IP[12])<<+int64(addr.IP[13])<<32 + int64(addr.IP[14])<<24 + int64(addr.IP[15])<<16 + int64(addr.Port)
+		if len(addr.IP) < 16 {
+			if addr.IP = addr.IP.To16(); len(addr.IP) < 16 {
+				return int64(addr.Port)
+			}
 		}
+		return int64(addr.IP[12])<<+int64(addr.IP[13])<<32 + int64(addr.IP[14])<<24 + int64(addr.IP[15])<<16 + int64(addr.Port)
 	}
 }
 
@@ -88,7 +97,6 @@ func getLanIP() (net.IP, error) {
 
 // errlog 输出信息至os.Stderr
 func errlog(err ...error) bool {
-
 	var haveErr bool = false
 	for i, e := range err {
 		if e != nil {
