@@ -2,7 +2,6 @@ package ioer
 
 import (
 	"errors"
-	"io"
 	"net"
 	"sync"
 )
@@ -17,11 +16,15 @@ type Conn struct {
 	raddr, laddr *net.UDPAddr
 
 	// buf        chan []byte // 读取数据管道, 不能有容量
-	w          *io.PipeWriter
-	r          *io.PipeReader
+	// w          *io.PipeWriter
+	// r          *io.PipeReader
+
+	buf    []byte // 数据缓存
+	buflen int
+
 	listenerid int64 // 所属的listener
-	ing        uint8 // 表示活跃程度, 每进行一次通信都会进行累加
-	done       bool  // Conn关闭flag
+	// ing        uint8 // 表示活跃程度, 每进行一次通信都会进行累加
+	done bool // Conn关闭flag
 }
 
 var dialLock sync.Mutex
@@ -55,7 +58,7 @@ func Dial(laddr, raddr *net.UDPAddr) (*Conn, error) {
 			var c = new(Conn)
 
 			// c.buf = make(chan []byte)
-			c.r, c.w = io.Pipe()
+			// c.r, c.w = io.Pipe()
 			c.Lconn = l.lconn
 			c.raddr, c.laddr = raddr, laddr
 			c.listenerid = ider(laddr)
@@ -76,7 +79,8 @@ func (c *Conn) Read(b []byte) (int, error) {
 	} else {
 
 		// return copy(b, <-c.buf), nil
-		return c.r.Read(b)
+		// return c.r.Read(b)
+		return 0, nil
 	}
 }
 
@@ -85,7 +89,7 @@ func (c *Conn) Write(b []byte) (int, error) {
 	if c.done {
 		return 0, errClosed
 	} else {
-		c.ing = c.ing + 1
+		// c.ing = c.ing + 1
 		return c.Lconn.WriteToUDP(b, c.raddr)
 	}
 }
@@ -193,7 +197,7 @@ func (l *Listener) add(raddr *net.UDPAddr) *Conn {
 	} else {
 		c = new(Conn)
 		// c.buf = make(chan []byte)
-		c.r, c.w = io.Pipe()
+		// c.r, c.w = io.Pipe()
 		c.raddr, c.Lconn = raddr, l.lconn
 		c.listenerid = ider(l.laddr)
 

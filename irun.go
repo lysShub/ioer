@@ -5,7 +5,6 @@ package ioer
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"runtime"
@@ -41,13 +40,13 @@ func (l *Listener) run() {
 		} else if n > 0 {
 			id = ider(raddr)
 
-			if c, ok = l.connList[id]; !ok { // 新增连接Conn 瓶颈
+			if c, ok = l.connList[id]; !ok { // 新增连接Conn
 				// 权鉴
 
 				// 新增连接
 				c = new(Conn)
 				// c.buf= make(chan []byte)
-				c.r, c.w = io.Pipe()
+				// c.r, c.w = io.Pipe()
 				c.raddr, c.Lconn = raddr, l.lconn
 				c.listenerid = ider(l.laddr)
 				select {
@@ -60,9 +59,9 @@ func (l *Listener) run() {
 			// 	c.io <- l.tmp[:n]
 			// }
 
-			c.ing = c.ing + 1
+			// c.ing = c.ing + 1
 
-			c.Write(tmp[:n])
+			// c.w.Write(tmp[:n])
 
 			// select {
 			// // case c.buf <- tmp[:n]: // 写入数据
